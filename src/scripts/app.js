@@ -33,17 +33,6 @@ const $ = (id) => document.getElementById(id);
 const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-function setLoading(targetId, message = "Carregando...") {
-  const target = $(targetId);
-  if (!target) return;
-  target.innerHTML = `<div class="loading-row">${message}</div>`;
-}
-
-function emptyState(message, actionLabel = "", actionId = "") {
-  const button = actionLabel ? `<button class="btn btn-outline" data-empty-action="${actionId}">${actionLabel}</button>` : "";
-  return `<div class="empty-state"><p>${message}</p>${button}</div>`;
-}
-
 function toast(message, type = "success") {
   const div = document.createElement("div");
   div.className = `toast ${type}`;
@@ -84,7 +73,7 @@ function renderLowStockAlerts() {
       </div>
     `).join("");
 
-  $("lowStockAlerts").innerHTML = list || emptyState("Nenhum item em estado crítico.");
+  $("lowStockAlerts").innerHTML = list || "<p class='hint'>Nenhum item em estado crítico.</p>";
   document.querySelectorAll("[data-alert-item]").forEach((btn) => {
     btn.onclick = () => {
       const item = state.items.find((i) => i.id === btn.dataset.alertItem);
@@ -102,7 +91,6 @@ function parseItemInput(raw) {
 }
 
 async function loadPlates() {
-  setLoading("platesListContainer", "Carregando placas...");
   const snap = await getDocs(query(collection(db, "plates"), orderBy("plate")));
   state.plates = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   renderPlates();
@@ -111,7 +99,6 @@ async function loadPlates() {
 }
 
 async function loadItems() {
-  setLoading("itemsListContainer", "Carregando itens...");
   const snap = await getDocs(query(collection(db, "items"), orderBy("code")));
   state.items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   renderItems();
@@ -120,7 +107,6 @@ async function loadItems() {
 }
 
 async function loadStock() {
-  $("stockTableBody").innerHTML = `<tr><td colspan="7"><div class="loading-row">Carregando estoque...</div></td></tr>`;
   const snap = await getDocs(collection(db, "stock"));
   state.stockByItem = new Map(snap.docs.map((d) => [d.data().itemId, Number(d.data().quantityAtual || 0)]));
   renderStock();
@@ -128,7 +114,6 @@ async function loadStock() {
 }
 
 async function loadRequests() {
-  setLoading("requestsList", "Carregando solicitações...");
   const snap = await getDocs(query(collection(db, "purchase_requests"), orderBy("createdAt", "desc"), limit(200)));
   state.requests = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   renderRequests();
@@ -139,7 +124,7 @@ function renderPlates() {
   const rows = state.plates
     .filter((p) => p.plate.toLowerCase().includes(term))
     .map((p) => `<div class='request-line'><span><strong>${p.plate}</strong> ${p.model || ""}<br><small>${p.notes || ""}</small></span><button class='btn btn-danger' data-del-plate='${p.id}'>Excluir</button></div>`).join("");
-  $("platesListContainer").innerHTML = rows || emptyState("Nenhuma placa cadastrada.", "Cadastrar primeira placa", "plateValue");
+  $("platesListContainer").innerHTML = rows || "<p class='hint'>Nenhuma placa cadastrada.</p>";
   document.querySelectorAll("[data-del-plate]").forEach((btn) => btn.onclick = async () => {
     await deleteDoc(doc(db, "plates", btn.dataset.delPlate));
     toast("Placa removida");
@@ -152,7 +137,7 @@ function renderItems() {
   const rows = state.items
     .filter((i) => i.code.toLowerCase().includes(term) || i.name.toLowerCase().includes(term))
     .map((i) => `<div class='request-line'><span><strong>${i.code}</strong> - ${i.name} (${i.unit})<br><small>${i.category || "Sem categoria"} • Mínimo: ${i.minStock || 0}</small></span><button class='btn btn-danger' data-del-item='${i.id}'>Excluir</button></div>`).join("");
-  $("itemsListContainer").innerHTML = rows || emptyState("Nenhum item cadastrado.", "Cadastrar primeiro item", "itemCode");
+  $("itemsListContainer").innerHTML = rows || "<p class='hint'>Nenhum item cadastrado.</p>";
   document.querySelectorAll("[data-del-item]").forEach((btn) => btn.onclick = async () => {
     await deleteDoc(doc(db, "items", btn.dataset.delItem));
     toast("Item removido");
@@ -176,7 +161,7 @@ function renderStock() {
         <td>${qty}</td><td>${min}</td><td class='${bad ? "status-danger" : "status-ok"}'>${bad ? "Abaixo do mínimo" : "OK"}</td>
       </tr>`;
     }).join("");
-  $("stockTableBody").innerHTML = rows || `<tr><td colspan="7">${emptyState("Sem itens para este filtro.", "Limpar filtros", "stockSearch")}</td></tr>`;
+  $("stockTableBody").innerHTML = rows || "<tr><td colspan='7'>Sem resultados.</td></tr>";
 }
 
 function recalcNfTotals() {
@@ -189,12 +174,12 @@ function recalcNfTotals() {
 }
 
 function renderNfItems() {
-  $("nfItemsBody").innerHTML = state.nfDraftItems.length ? state.nfDraftItems.map((it, idx) => `
+  $("nfItemsBody").innerHTML = state.nfDraftItems.map((it, idx) => `
     <tr>
       <td>${it.codeSnapshot}</td><td>${it.nameSnapshot}</td><td>${it.quantidade}</td><td>${money(it.valorUnitario)}</td><td>${money(it.discount)}</td><td>${money(it.totalItem)}</td>
       <td><button data-rm-nf-item='${idx}' class='btn btn-danger'>X</button></td>
     </tr>
-  `).join("") : `<tr><td colspan="7">${emptyState("Sem itens na NF.", "Adicionar item", "openNfItemModalBtn")}</td></tr>`;
+  `).join("");
   document.querySelectorAll("[data-rm-nf-item]").forEach((btn) => btn.onclick = () => {
     state.nfDraftItems.splice(Number(btn.dataset.rmNfItem), 1);
     renderNfItems();
@@ -206,7 +191,7 @@ function renderRequests() {
   const status = $("requestStatusFilter").value;
   const priority = $("requestPriorityFilter").value;
   const items = state.requests.filter((r) => (!status || r.status === status) && (!priority || r.prioridade === priority));
-  $("requestsList").innerHTML = items.length ? items.map((r) => `
+  $("requestsList").innerHTML = items.map((r) => `
     <div class='request-line'>
       <span><strong>${r.itemName || "Item"}</strong> • ${r.quantidade} • prioridade ${r.prioridade}<br><small>Status: ${r.status} • ${r.obs || "sem observação"}</small></span>
       <span>
@@ -214,7 +199,7 @@ function renderRequests() {
         <button class='btn btn-danger' data-req='${r.id}' data-status='canceled'>Cancelar</button>
       </span>
     </div>
-  `).join("") : emptyState("Sem solicitações para os filtros selecionados.");
+  `).join("") || "<p class='hint'>Sem solicitações.</p>";
 
   document.querySelectorAll("[data-req]").forEach((btn) => {
     btn.onclick = async () => {
@@ -329,7 +314,7 @@ async function searchNf() {
   if (!numero) return;
   const snap = await getDocs(query(collection(db, "nfs"), where("numeroNF", "==", numero), limit(1)));
   if (snap.empty) {
-    $("nfSearchResult").innerHTML = emptyState("NF não encontrada para o número informado.");
+    $("nfSearchResult").innerHTML = "<p class='hint'>NF não encontrada.</p>";
     return;
   }
   const nf = { id: snap.docs[0].id, ...snap.docs[0].data() };
@@ -346,7 +331,7 @@ async function reportByPlate() {
   const plateInput = $("movementPlateFilter").value.trim().toLowerCase();
   const plate = state.plates.find((p) => p.plate.toLowerCase() === plateInput);
   if (!plate) {
-    $("plateReport").innerHTML = emptyState("Placa não encontrada.");
+    $("plateReport").innerHTML = "<p class='hint'>Placa não encontrada.</p>";
     return;
   }
 
@@ -460,17 +445,8 @@ function setupEvents() {
     await Promise.all([loadItems(), loadStock()]);
   });
 
-  $("openNfItemModalBtn").onclick = () => {
-    $("nfItemModal").classList.remove("hidden");
-    $("nfItemSearch").focus();
-  };
+  $("openNfItemModalBtn").onclick = () => $("nfItemModal").classList.remove("hidden");
   $("closeModalBtn").onclick = () => $("nfItemModal").classList.add("hidden");
-  $("nfItemModal").addEventListener("click", (e) => {
-    if (e.target.id === "nfItemModal") $("nfItemModal").classList.add("hidden");
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") $("nfItemModal").classList.add("hidden");
-  });
   $("nfItemForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const item = parseItemInput($("nfItemSearch").value);
@@ -502,18 +478,6 @@ function setupEvents() {
   $("searchByPlateBtn").onclick = () => reportByPlate().catch((err) => toast(err.message, "error"));
   $("runMonthlyReportBtn").onclick = () => runMonthlyReport().catch((err) => toast(err.message, "error"));
   $("exportCsvBtn").onclick = exportMonthlyCsv;
-
-  document.addEventListener("click", (e) => {
-    const action = e.target.dataset.emptyAction;
-    if (!action) return;
-    if (action === "stockSearch") {
-      $("stockSearch").value = "";
-      $("stockCategoryFilter").value = "";
-      return renderStock();
-    }
-    if (action === "openNfItemModalBtn") return $("openNfItemModalBtn").click();
-    $(action)?.focus();
-  });
 
   $("requestForm").addEventListener("submit", async (e) => {
     e.preventDefault();
