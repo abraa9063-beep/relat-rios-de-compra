@@ -9,24 +9,19 @@
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <div class="brand-block">
+        <div>
           <h1>Relatórios de Compra / Estoque</h1>
-          <p class="subtitle">Transportadora • NF, estoque e consumo por placa</p>
+          <p class="subtitle">Transportadora • Gestão de estoque, NF e consumo por placa</p>
         </div>
-        <div id="authHeader" class="auth-header hidden" aria-live="polite">
-          <span class="status-dot" aria-hidden="true"></span>
-          <div class="user-meta">
-            <small>Usuário logado</small>
-            <span id="userEmail"></span>
-          </div>
+        <div id="authHeader" class="auth-header hidden">
+          <span id="userEmail"></span>
           <button id="logoutBtn" class="btn btn-outline">Sair</button>
         </div>
       </header>
 
       <main>
         <section id="loginSection" class="card login-card">
-          <h2>Acesso ao Sistema</h2>
-          <p class="hint">Entre para gerenciar notas fiscais, consumo por placa e estoque da frota.</p>
+          <h2>Login</h2>
           <form id="loginForm" class="grid-form">
             <label>Email
               <input type="email" id="loginEmail" required placeholder="usuario@empresa.com" />
@@ -67,7 +62,7 @@
               </div>
               <div class="table-wrap"><table>
                 <thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Saldo</th><th>Mínimo</th><th>Status</th></tr></thead>
-                <tbody id="stockTableBody"><tr><td colspan="7"><div class="loading-row">Carregando estoque...</div></td></tr></tbody>
+                <tbody id="stockTableBody"></tbody>
               </table></div>
             </div>
           </section>
@@ -85,7 +80,7 @@
               <button id="openNfItemModalBtn" class="btn">Adicionar Item na NF</button>
               <div class="table-wrap"><table>
                 <thead><tr><th>Código</th><th>Nome</th><th>Qtd</th><th>Vlr Unit.</th><th>Desconto (R$)</th><th>Total</th><th></th></tr></thead>
-                <tbody id="nfItemsBody"><tr><td colspan="7"><div class="empty-state"><p>Sem itens na NF.</p><small>Use o botão acima para incluir o primeiro item.</small></div></td></tr></tbody>
+                <tbody id="nfItemsBody"></tbody>
               </table></div>
               <div class="totals">
                 <p>Total Bruto: <strong id="nfTotalBruto">R$ 0,00</strong></p>
@@ -101,7 +96,7 @@
                 <input id="searchNumeroNF" placeholder="Número NF" />
                 <button id="searchNfBtn" class="btn btn-outline">Pesquisar</button>
               </div>
-              <div id="nfSearchResult" class="empty-state"><p>Pesquise uma NF para ver os detalhes.</p></div>
+              <div id="nfSearchResult"></div>
             </div>
           </section>
 
@@ -126,7 +121,7 @@
                 <input id="movementPlateFilter" placeholder="Digite placa" list="platesList" />
                 <button id="searchByPlateBtn" class="btn btn-outline">Consultar</button>
               </div>
-              <div id="plateReport" class="empty-state"><p>Selecione uma placa para analisar consumo.</p></div>
+              <div id="plateReport"></div>
             </div>
           </section>
 
@@ -138,7 +133,7 @@
                 <button id="runMonthlyReportBtn" class="btn">Gerar</button>
                 <button id="exportCsvBtn" class="btn btn-outline">Exportar CSV</button>
               </div>
-              <div id="monthlyReportResult" class="empty-state"><p>Escolha um mês e clique em gerar relatório.</p></div>
+              <div id="monthlyReportResult"></div>
             </div>
           </section>
 
@@ -165,7 +160,7 @@
                 <select id="requestStatusFilter"><option value="">Todos status</option><option value="open">Abertos</option><option value="done">Atendidos</option><option value="canceled">Cancelados</option></select>
                 <select id="requestPriorityFilter"><option value="">Todas prioridades</option><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option></select>
               </div>
-              <div id="requestsList"><div class="loading-row">Carregando solicitações...</div></div>
+              <div id="requestsList"></div>
             </div>
           </section>
 
@@ -180,7 +175,7 @@
                   <button class="btn" type="submit">Salvar Placa</button>
                 </form>
                 <input id="plateSearch" placeholder="Buscar placa" />
-                <div id="platesListContainer"><div class="loading-row">Carregando placas...</div></div>
+                <div id="platesListContainer"></div>
               </div>
 
               <div class="card">
@@ -194,7 +189,7 @@
                   <button class="btn" type="submit">Salvar Item</button>
                 </form>
                 <input id="itemSearch" placeholder="Buscar por código ou nome" />
-                <div id="itemsListContainer"><div class="loading-row">Carregando itens...</div></div>
+                <div id="itemsListContainer"></div>
               </div>
             </div>
           </section>
@@ -202,9 +197,9 @@
       </main>
     </div>
 
-    <div id="nfItemModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="nfModalTitle">
+    <div id="nfItemModal" class="modal hidden">
       <div class="modal-card">
-        <h3 id="nfModalTitle">Adicionar item na NF</h3>
+        <h3>Adicionar item na NF</h3>
         <form id="nfItemForm" class="grid-form">
           <label>Item (código/nome)<input id="nfItemSearch" list="itemsList" required /></label>
           <label>Quantidade<input id="nfItemQty" type="number" min="1" required /></label>
