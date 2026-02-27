@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Relatórios de Compra / Estoque</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/styles/main.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <section id="loginSection" class="login-layout">
+        <div class="login-panel card login-card">
+          <div class="login-badge">ERP SaaS</div>
+          <h2>Acesso ao Sistema</h2>
+          <p class="hint">Faça login para gerenciar estoque, notas fiscais, consumo por placa e solicitações internas.</p>
+          <form id="loginForm" class="grid-form">
+            <label>Email
+              <input type="email" id="loginEmail" required placeholder="usuario@empresa.com" />
+            </label>
+            <label>Senha
+              <input type="password" id="loginPassword" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Entrar</button>
+          </form>
+          <small class="hint">Use Firebase Authentication (email/senha).</small>
+        </div>
+      </section>
+
+      <section id="appSection" class="dashboard-layout hidden">
+        <aside class="sidebar">
+          <div class="sidebar-brand">
+            <div class="brand-dot"></div>
+            <div>
+              <h1>Relatórios de Compra</h1>
+              <p>/ Estoque</p>
+            </div>
+          </div>
+
+          <nav class="tabs" id="mainTabs">
+            <button class="tab active" data-tab="dashboard">
+              <span class="tab-icon">◈</span><span>Dashboard</span>
+            </button>
+            <button class="tab" data-tab="stock">
+              <span class="tab-icon">▦</span><span>Estoque</span>
+            </button>
+            <button class="tab" data-tab="nfs">
+              <span class="tab-icon">◉</span><span>NFs</span>
+            </button>
+            <button class="tab" data-tab="movements">
+              <span class="tab-icon">↗</span><span>Baixas</span>
+            </button>
+            <button class="tab" data-tab="reports">
+              <span class="tab-icon">◍</span><span>Relatórios</span>
+            </button>
+            <button class="tab" data-tab="requests">
+              <span class="tab-icon">✦</span><span>Solicitações</span>
+            </button>
+            <button class="tab" data-tab="base">
+              <span class="tab-icon">⚙</span><span>Cadastros</span>
+            </button>
+          </nav>
+        </aside>
+
+        <div class="content-area">
+          <header class="topbar">
+            <div>
+              <h2 class="topbar-title">Relatórios de Compra / Estoque</h2>
+              <p class="subtitle">Transportadora • NF, estoque e consumo por placa</p>
+            </div>
+            <div id="authHeader" class="auth-header" aria-live="polite">
+              <span class="status-dot" aria-hidden="true"></span>
+              <div class="user-meta">
+                <small>Usuário logado</small>
+                <span id="userEmail"></span>
+              </div>
+              <button id="logoutBtn" class="btn btn-outline">Sair</button>
+            </div>
+          </header>
+
+          <main class="main-content">
+            <section id="dashboard" class="tab-content active">
+              <div class="cards-grid" id="dashboardCards"></div>
+              <div class="card">
+                <h3>Alertas de estoque mínimo</h3>
+                <div id="lowStockAlerts"></div>
+              </div>
+            </section>
+
+            <section id="stock" class="tab-content">
+              <div class="card">
+                <h3>Consulta de Estoque</h3>
+                <div class="inline-fields">
+                  <input id="stockSearch" placeholder="Buscar por código ou nome" />
+                  <input id="stockCategoryFilter" placeholder="Filtrar categoria" />
+                </div>
+                <div class="table-wrap"><table>
+                  <thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Saldo</th><th>Mínimo</th><th>Status</th></tr></thead>
+                  <tbody id="stockTableBody"><tr><td colspan="7"><div class="loading-row">Carregando estoque...</div></td></tr></tbody>
+                </table></div>
+              </div>
+            </section>
+
+            <section id="nfs" class="tab-content">
+              <div class="card">
+                <h3>Entrada de Nota Fiscal</h3>
+                <form id="nfHeaderForm" class="grid-form four-cols">
+                  <label>Número NF<input id="nfNumero" required /></label>
+                  <label>Fornecedor<input id="nfFornecedor" required /></label>
+                  <label>Data Entrada<input id="nfData" type="date" required /></label>
+                  <label>Chave/Identificador<input id="nfKey" /></label>
+                  <label class="full">Observações<textarea id="nfObs"></textarea></label>
+                </form>
+                <button id="openNfItemModalBtn" class="btn">Adicionar Item na NF</button>
+                <div class="table-wrap"><table>
+                  <thead><tr><th>Código</th><th>Nome</th><th>Qtd</th><th>Vlr Unit.</th><th>Desconto (R$)</th><th>Total</th><th></th></tr></thead>
+                  <tbody id="nfItemsBody"><tr><td colspan="7"><div class="empty-state"><p>Sem itens na NF.</p><small>Use o botão acima para incluir o primeiro item.</small></div></td></tr></tbody>
+                </table></div>
+                <div class="totals">
+                  <p>Total Bruto: <strong id="nfTotalBruto">R$ 0,00</strong></p>
+                  <p>Total Descontos: <strong id="nfTotalDesconto">R$ 0,00</strong></p>
+                  <p>Total Líquido: <strong id="nfTotalLiquido">R$ 0,00</strong></p>
+                </div>
+                <button id="saveNfBtn" class="btn">Salvar NF e Atualizar Estoque</button>
+              </div>
+
+              <div class="card">
+                <h3>Consulta por NF</h3>
+                <div class="inline-fields">
+                  <input id="searchNumeroNF" placeholder="Número NF" />
+                  <button id="searchNfBtn" class="btn btn-outline">Pesquisar</button>
+                </div>
+                <div id="nfSearchResult" class="empty-state"><p>Pesquise uma NF para ver os detalhes.</p></div>
+              </div>
+            </section>
+
+            <section id="movements" class="tab-content">
+              <div class="card">
+                <h3>Baixa por Placa</h3>
+                <form id="outForm" class="grid-form four-cols">
+                  <label>Placa<input id="outPlateSearch" list="platesList" required /></label>
+                  <datalist id="platesList"></datalist>
+                  <label>Item (código/nome)<input id="outItemSearch" list="itemsList" required /></label>
+                  <datalist id="itemsList"></datalist>
+                  <label>Quantidade<input id="outQty" type="number" min="1" required /></label>
+                  <label>Data<input id="outDate" type="date" required /></label>
+                  <label>NF Origem (opcional)<input id="outNfRef" /></label>
+                  <label class="full">Observação<textarea id="outObs"></textarea></label>
+                  <button class="btn" type="submit">Confirmar Baixa</button>
+                </form>
+              </div>
+              <div class="card">
+                <h3>Consulta por Placa</h3>
+                <div class="inline-fields">
+                  <input id="movementPlateFilter" placeholder="Digite placa" list="platesList" />
+                  <button id="searchByPlateBtn" class="btn btn-outline">Consultar</button>
+                </div>
+                <div id="plateReport" class="empty-state"><p>Selecione uma placa para analisar consumo.</p></div>
+              </div>
+            </section>
+
+            <section id="reports" class="tab-content">
+              <div class="card">
+                <h3>Relatório Mensal de Entradas</h3>
+                <div class="inline-fields">
+                  <input type="month" id="reportMonth" />
+                  <button id="runMonthlyReportBtn" class="btn">Gerar</button>
+                  <button id="exportCsvBtn" class="btn btn-outline">Exportar CSV</button>
+                </div>
+                <div id="monthlyReportResult" class="empty-state"><p>Escolha um mês e clique em gerar relatório.</p></div>
+              </div>
+            </section>
+
+            <section id="requests" class="tab-content">
+              <div class="card">
+                <h3>Solicitar Item</h3>
+                <form id="requestForm" class="grid-form four-cols">
+                  <label>Item<input id="requestItem" list="itemsList" required /></label>
+                  <label>Quantidade<input id="requestQty" type="number" min="1" required /></label>
+                  <label>Prioridade
+                    <select id="requestPriority" required>
+                      <option value="baixa">Baixa</option>
+                      <option value="media">Média</option>
+                      <option value="alta">Alta</option>
+                    </select>
+                  </label>
+                  <label class="full">Observação<textarea id="requestObs"></textarea></label>
+                  <button class="btn" type="submit">Criar Solicitação</button>
+                </form>
+              </div>
+              <div class="card">
+                <h3>Fila de Compras</h3>
+                <div class="inline-fields">
+                  <select id="requestStatusFilter"><option value="">Todos status</option><option value="open">Abertos</option><option value="done">Atendidos</option><option value="canceled">Cancelados</option></select>
+                  <select id="requestPriorityFilter"><option value="">Todas prioridades</option><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option></select>
+                </div>
+                <div id="requestsList"><div class="loading-row">Carregando solicitações...</div></div>
+              </div>
+            </section>
+
+            <section id="base" class="tab-content">
+              <div class="cards-grid">
+                <div class="card">
+                  <h3>Cadastro de Placas</h3>
+                  <form id="plateForm" class="grid-form">
+                    <label>Placa<input id="plateValue" required /></label>
+                    <label>Modelo<input id="plateModel" /></label>
+                    <label>Observações<textarea id="plateNotes"></textarea></label>
+                    <button class="btn" type="submit">Salvar Placa</button>
+                  </form>
+                  <input id="plateSearch" placeholder="Buscar placa" />
+                  <div id="platesListContainer"><div class="loading-row">Carregando placas...</div></div>
+                </div>
+
+                <div class="card">
+                  <h3>Cadastro de Itens</h3>
+                  <form id="itemForm" class="grid-form">
+                    <label>Código<input id="itemCode" required /></label>
+                    <label>Nome<input id="itemName" required /></label>
+                    <label>Categoria<input id="itemCategory" /></label>
+                    <label>Unidade<input id="itemUnit" required value="un" /></label>
+                    <label>Estoque Mínimo<input id="itemMinStock" type="number" min="0" /></label>
+                    <button class="btn" type="submit">Salvar Item</button>
+                  </form>
+                  <input id="itemSearch" placeholder="Buscar por código ou nome" />
+                  <div id="itemsListContainer"><div class="loading-row">Carregando itens...</div></div>
+                </div>
+              </div>
+            </section>
+          </main>
+        </div>
+      </section>
+    </div>
+
+    <div id="nfItemModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="nfModalTitle">
+      <div class="modal-card card">
+        <h3 id="nfModalTitle">Adicionar item na NF</h3>
+        <form id="nfItemForm" class="grid-form">
+          <label>Item (código/nome)<input id="nfItemSearch" list="itemsList" required /></label>
+          <label>Quantidade<input id="nfItemQty" type="number" min="1" required /></label>
+          <label>Valor Unitário<input id="nfItemUnitPrice" type="number" min="0" step="0.01" required /></label>
+          <label>Desconto (R$)<input id="nfItemDiscount" type="number" min="0" step="0.01" value="0" /></label>
+          <div class="inline-fields">
+            <button class="btn" type="submit">Adicionar</button>
+            <button class="btn btn-outline" id="closeModalBtn" type="button">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script type="module" src="./src/scripts/app.js"></script>
+  </body>
+</html>
